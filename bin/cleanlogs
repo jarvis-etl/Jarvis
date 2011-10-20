@@ -1,0 +1,68 @@
+#!/bin/bash
+####################
+#Copyright (c) 2011, iContact Corporation
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without
+#modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the <organization> nor the
+#      names of its contributors may be used to endorse or promote products
+#      derived from this software without specific prior written permission.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+#DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+####################
+
+. "/etc/default/jarvis"
+
+LOGDATE=`date --date "yesterday" +%Y/%m/%d`
+
+if [[ -n "${1}" ]]
+then
+	LOGDATE="${1}"
+fi
+
+NEWDIR="${JARVIS_DATA}/archive/`echo $LOGDATE | tr -d "/"`"
+
+echo "`date +"%F %T"` JARVIS CLEANER -- Begin archiving for ${LOGDATE}" >> ${JARVIS_LOG}
+
+UNLOADEDFILES=`find ${JARVIS_DATA} -path "*archive*" -prune -o -wholename "*${LOGDATE}*" -type f -print | wc -l`
+
+if [[ ${UNLOADEDFILES} -gt 0 ]]
+then
+	echo "`date +"%F %T"` JARVIS CLEANER -- ${LOGDATE} failed: Directory not empty. Exiting..." >> ${JARVIS_LOG}
+	exit 1
+fi
+
+mkdir -p ${NEWDIR}
+
+for FILE in `find ${JARVIS_DATA} -wholename "*${LOGDATE}/archive*" -type f -path "*-*.csv" | sort` 
+do
+	NEWFILE=`echo ${FILE} | sed "s@.*/data/\([^0-9]*\)[0-9].*/\([a-z]\+\)-[0-9]\{4\}@${NEWDIR}/\1_\2@g"`
+
+	cat ${FILE} >> ${NEWFILE}
+	rm ${FILE}
+done
+
+rm -rf ${JARVIS_DATA}/*/${LOGDATE}
+
+for FILE in `find ${JARVIS_DATA}/archive/${LOGDATE}/ -type f`
+do
+	sort -t, -k`head -n1 ${FILE} | tr "," "\n" | wc -l` -o ${FILE} ${FILE}
+done
+
+tar -C ${JARVIS_DATA}/archive --remove-files -czpf ${NEWDIR}.tgz `echo ${LOGDATE} | tr -d "/"`
+echo "`date +"%F %T"` JARVIS CLEANER -- Archiving for ${LOGDATE} complete" >> ${JARVIS_LOG}

@@ -1,0 +1,20 @@
+JARVIS_BASE="/home/jarvis/jarvis"
+
+JARVIS_BIN="${JARVIS_BASE}/bin"
+JARVIS_LIB="${JARVIS_BASE}/lib"
+JARVIS_VAR="${JARVIS_BASE}/var"
+JARVIS_DATA="${JARVIS_BASE}/data"
+JARVIS_ETC="${JARVIS_BASE}/etc/jarvis"
+
+JARVIS_LOG="${JARVIS_VAR}/log/jarvis.log"
+
+JARVIS_PIPE="/home/jarvis/pipes"
+JARVIS_SSH_KEYPATH="/home/jarvis/.ssh"
+
+# Comment this out if you do not want dates sliced by day inside the database.
+# JARVIS_SLICEDATE=true
+
+# Read delay: How long to sleep before retrying to read from pipe.
+JARVIS_READDELAY=5
+
+JARVIS_DB="jarvis"
